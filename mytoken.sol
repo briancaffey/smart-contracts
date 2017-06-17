@@ -36,6 +36,7 @@ contract MyToken is owned {
   uint256 public totalSupply;
   uint256 public sellPrice;
   uint256 public buyPrice;
+  uint minBalanceForAccounts;
 
   function MyToken(
     uint256 initialSupply,
@@ -50,6 +51,10 @@ contract MyToken is owned {
     name = tokenName;
     symbol = tokenSymbol;
     decimals = decimalUnits;
+  }
+
+  function setMinBalance(uint minimumBalanceInFinney) onlyOwner {
+    minBalanceForAccounts = minimumBalanceInFinney * 1 finney;
   }
 
   function setPrices(uint256 newSellPrice, uint256 newBuyPrice) onlyOwner {
@@ -79,5 +84,30 @@ contract MyToken is owned {
     balanceOf[msg.sender] -= _value;
     balanceOf[_to] += _value;
     Transfer(msg.sender, _to, _value);
+    if (msg.sender.balance<minBalanceForAccounts)
+      sell((minBalanceForAccounts-msg.sender.balance)/sellPrice);
   }
+
+  function buy() payable returns (uint amount){
+    amount = msg.value / buyPrice;
+    if (balanceOf[this] < amount) throw;
+    balanceOf[msg.sender] += amount;
+    balanceOf[this] -= amount;
+    Transfer(this, msg.sender, amount);
+    return amount;
+  }
+
+  function sell(uint amount) returns (uint revenue){
+    if (balanceOf[msg.sender] < amount ) throw;
+    balanceOf[this] += amount;
+    balanceOf[msg.sender] -= amount;
+    revenue = amount * sellPrice;
+    if (!msg.sender.send(revenue)) {
+      throw;
+    } else {
+      Transfer(msg.sender, this, amount);
+      return revenue;
+    }
+  }
+
 }
