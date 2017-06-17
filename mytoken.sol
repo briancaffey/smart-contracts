@@ -1,3 +1,5 @@
+pragma solidity ^0.4.11;
+
 
 /*
 This is a sample contract available on the Ethereum Foundation website: https://ethereum.org/token
